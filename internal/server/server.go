@@ -26,14 +26,32 @@ func registerSignUpEndPoints(handler gin.IRoutes) {
 	handler.POST(constants.ForwardSlash+strings.Join([]string{constants.ForwardSlash, constants.SignUp}, constants.ForwardSlash), service.SignUp())
 }
 
+// Registering the SignUp EndPoints
+func registerCreateNoteEndPoints(handler gin.IRoutes) {
+	handler.POST(constants.ForwardSlash+strings.Join([]string{constants.ForwardSlash, constants.Notes}, constants.ForwardSlash), service.CreateNote())
+}
+
+// Registering the SignUp EndPoints
+func registerGetNoteEndPoints(handler gin.IRoutes) {
+	handler.GET(constants.ForwardSlash+strings.Join([]string{constants.ForwardSlash, constants.Notes}, constants.ForwardSlash), service.GetNote())
+}
+
+// Registering the SignUp EndPoints
+func registerDeleteNoteEndPoints(handler gin.IRoutes) {
+	handler.DELETE(constants.ForwardSlash+strings.Join([]string{constants.ForwardSlash, constants.Notes}, constants.ForwardSlash), service.DeleteNote())
+}
+
 func Start() {
 	plainHandler := gin.New()
 
-	loginHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery())
-	registerLoginEndPoints(loginHandler)
+	loginSignUpHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery())
+	registerLoginEndPoints(loginSignUpHandler)
+	registerSignUpEndPoints(loginSignUpHandler)
 
-	signUpHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery())
-	registerSignUpEndPoints(signUpHandler)
+	notesHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery())
+	registerCreateNoteEndPoints(notesHandler)
+	registerGetNoteEndPoints(notesHandler)
+	registerDeleteNoteEndPoints(notesHandler)
 
 	cfg := config.GetConfig()
 	srv := &http.Server{

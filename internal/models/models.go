@@ -1,8 +1,9 @@
 package models
 
-type Note struct {
-	ID   *int   `json:"id"`
-	Note string `json:"note"`
+type Notes struct {
+	SessionID string `json:"sid,omitempty"`
+	Note      string `json:"note,omitempty"`
+	NoteId    string `json:"id,omitempty"`
 }
 
 type UserSignUp struct {

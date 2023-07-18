@@ -1,8 +1,6 @@
 package db
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -13,12 +11,8 @@ import (
 )
 
 func (p postgres) SignUp(ctx *gin.Context, userSignUp models.UserSignUp) *noteserror.NotesError {
-	fmt.Println("Inside UserSignUp : 0", userSignUp)
-
 	query := `insert into notesusers(name, password, emailid) values($1,$2,$3)`
-	fmt.Println("Query : ", query)
 	_, err := p.db.Exec(query, userSignUp.Name, userSignUp.Password, userSignUp.Email)
-	fmt.Println("Err : ", err)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value") {
 			return &noteserror.NotesError{
@@ -40,8 +34,6 @@ func (p postgres) SignUp(ctx *gin.Context, userSignUp models.UserSignUp) *notese
 			}
 		}
 	}
-	fmt.Println("Inside UserSignUp : 1", userSignUp)
-	log.Println("Inserted a row")
 	return nil
 }
 
@@ -49,13 +41,11 @@ func (p postgres) Login(ctx *gin.Context, login models.UserLogin) (string, *note
 	query := `SELECT password FROM notesusers WHERE emailid=$1`
 	var pass string
 	if err := p.db.QueryRow(query, login.Email).Scan(&pass); err != nil {
-		fmt.Println("Helloojn k k ")
 		return "", &noteserror.NotesError{
 			Code:    http.StatusInternalServerError,
 			Message: "Unable to get password",
 			Trace:   ctx.Request.Header.Get(constants.TransactionID),
 		}
 	}
-	fmt.Println("Pass : ", pass)
 	return pass, nil
 }
