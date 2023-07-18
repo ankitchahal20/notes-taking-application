@@ -44,9 +44,9 @@ func GetConfig() GlobalConfig {
 
 // Loading the values from default.toml and assigning them as part of GlobalConfig struct
 func InitGlobalConfig() error {
-	config, err := toml.LoadFile("./../config/default.toml")
+	config, err := toml.LoadFile("./config/defaults.toml")
 	if err != nil {
-		log.Printf("Error while loading deafault.toml file : %v ", err)
+		log.Printf("Error while loading defaults.toml file : %v ", err)
 		return err
 	}
 

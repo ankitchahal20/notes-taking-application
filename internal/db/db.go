@@ -6,11 +6,16 @@ import (
 	"log"
 
 	"github.com/ankit/project/notes-taking-application/internal/config"
+	"github.com/ankit/project/notes-taking-application/internal/models"
+	noteserror "github.com/ankit/project/notes-taking-application/internal/noteserror"
+	"github.com/gin-gonic/gin"
 )
 
 type postgres struct{ db *sql.DB }
 
 type NotesDBService interface {
+	Login(*gin.Context, models.UserLogin) (string, *noteserror.NotesError)
+	SignUp(*gin.Context, models.UserSignUp) *noteserror.NotesError
 }
 
 func New() (postgres, error) {
