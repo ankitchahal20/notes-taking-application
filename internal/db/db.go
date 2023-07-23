@@ -18,9 +18,9 @@ type NotesDBService interface {
 	Login(*gin.Context, models.UserLogin) (string, *noteserror.NotesError)
 	SignUp(*gin.Context, models.UserSignUp) *noteserror.NotesError
 	// notes
-	CreateNotes(*gin.Context, models.Notes) (*int, *noteserror.NotesError)
+	CreateNotes(*gin.Context, models.Notes) (string, *noteserror.NotesError)
 	DeleteNotes(*gin.Context, models.Notes) *noteserror.NotesError
-	GetNotes(*gin.Context, models.Notes) ([]models.Notes, *noteserror.NotesError)
+	GetNotes(*gin.Context) ([]models.Notes, *noteserror.NotesError)
 }
 
 func New() (postgres, error) {

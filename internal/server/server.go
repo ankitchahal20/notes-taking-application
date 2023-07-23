@@ -12,6 +12,7 @@ import (
 
 	"github.com/ankit/project/notes-taking-application/internal/config"
 	"github.com/ankit/project/notes-taking-application/internal/constants"
+	"github.com/ankit/project/notes-taking-application/internal/middleware"
 	"github.com/ankit/project/notes-taking-application/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -48,7 +49,10 @@ func Start() {
 	registerLoginEndPoints(loginSignUpHandler)
 	registerSignUpEndPoints(loginSignUpHandler)
 
-	notesHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery())
+	notesHandler := plainHandler.Group(constants.ForwardSlash + constants.Version).Use(gin.Recovery()).
+		Use(gin.Recovery()).
+		Use(middleware.AuthorizeUserRequest())
+
 	registerCreateNoteEndPoints(notesHandler)
 	registerGetNoteEndPoints(notesHandler)
 	registerDeleteNoteEndPoints(notesHandler)
@@ -104,7 +108,7 @@ func waitForShutdown(srv *http.Server) {
 
 	/*
 		The timer context and the cancel function (the cancel function releases its resources) will be returned,
-		 and you can use that context to perform Shutdown(ctx) ,
+		and you can use that context to perform Shutdown(ctx) ,
 		inside the Shutdown it check if the timer context Done channel is closed and will not run indefinitely.
 	*/
 

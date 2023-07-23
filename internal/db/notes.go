@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/ankit/project/notes-taking-application/internal/constants"
 	"github.com/ankit/project/notes-taking-application/internal/models"
@@ -10,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (p postgres) CreateNotes(ctx *gin.Context, notes models.Notes) (*int, *noteserror.NotesError) {
+func (p postgres) CreateNotes(ctx *gin.Context, notes models.Notes) (string, *noteserror.NotesError) {
 	fmt.Println("Inside UserSignUp : 0", notes)
 
 	query := `insert into notes(note) values($1) RETURNING id`
@@ -19,15 +20,15 @@ func (p postgres) CreateNotes(ctx *gin.Context, notes models.Notes) (*int, *note
 	err := p.db.QueryRow(query, notes.Note).Scan(&notesId)
 	if err != nil {
 
-		return nil, &noteserror.NotesError{
+		return "", &noteserror.NotesError{
 			Trace:   ctx.Request.Header.Get(constants.TransactionID),
 			Code:    http.StatusInternalServerError,
 			Message: "unable to add notes",
 		}
 
 	}
-
-	return &notesId, nil
+	id := strconv.Itoa(notesId)
+	return id, nil
 }
 
 func (p postgres) DeleteNotes(ctx *gin.Context, notes models.Notes) *noteserror.NotesError {
@@ -44,7 +45,7 @@ func (p postgres) DeleteNotes(ctx *gin.Context, notes models.Notes) *noteserror.
 	return nil
 }
 
-func (p postgres) GetNotes(ctx *gin.Context, notes models.Notes) ([]models.Notes, *noteserror.NotesError) {
+func (p postgres) GetNotes(ctx *gin.Context) ([]models.Notes, *noteserror.NotesError) {
 	query := `SELECT id, note FROM notes`
 
 	rows, err := p.db.Query(query)

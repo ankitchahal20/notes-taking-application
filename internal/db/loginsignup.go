@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -14,6 +15,7 @@ func (p postgres) SignUp(ctx *gin.Context, userSignUp models.UserSignUp) *notese
 	query := `insert into notesusers(name, password, emailid) values($1,$2,$3)`
 	_, err := p.db.Exec(query, userSignUp.Name, userSignUp.Password, userSignUp.Email)
 	if err != nil {
+		fmt.Println("Error : ", err)
 		if strings.Contains(err.Error(), "duplicate key value") {
 			return &noteserror.NotesError{
 				Trace:   ctx.Request.Header.Get(constants.TransactionID),
@@ -30,7 +32,7 @@ func (p postgres) SignUp(ctx *gin.Context, userSignUp models.UserSignUp) *notese
 			return &noteserror.NotesError{
 				Trace:   ctx.Request.Header.Get(constants.TransactionID),
 				Code:    http.StatusInternalServerError,
-				Message: "unable to add product details",
+				Message: "unable to signup",
 			}
 		}
 	}

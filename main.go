@@ -16,6 +16,8 @@ func main() {
 	// Initializing the Log client
 	utils.InitLogClient()
 
+	utils.InitSession()
+
 	// Initializing the GlobalConfig
 	err := config.InitGlobalConfig()
 	if err != nil {

@@ -5,16 +5,17 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ankit/project/notes-taking-application/internal/constants"
 	"github.com/ankit/project/notes-taking-application/internal/db"
 	"github.com/ankit/project/notes-taking-application/internal/models"
 	noteserror "github.com/ankit/project/notes-taking-application/internal/noteserror"
-	"github.com/gin-gonic/contrib/sessions"
+	"github.com/ankit/project/notes-taking-application/internal/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
+	"github.com/google/uuid"
 )
 
 var (
-	store       sessions.CookieStore
 	notesClient *NotesService
 )
 
@@ -44,14 +45,15 @@ func Login() func(ctx *gin.Context) {
 				})
 				return
 			}
-			store = sessions.NewCookieStore([]byte("hello"))
-			session, _ := store.Get(ctx.Request, "session-name")
+
+			sessionID := uuid.New().String()
+			session, _ := utils.Store.Get(ctx.Request, sessionID)
 
 			// Set session values
-			session.Values["userID"] = "user123"
-			session.Values["expiryTime"] = time.Now().Add(60 * time.Second).Unix()
+			session.Values["expiryTime"] = time.Now().Add(1 * time.Minute).Unix()
 
 			// Save the session
+			session.Values["sessionID"] = sessionID
 			seesionErr := session.Save(ctx.Request, ctx.Writer)
 			if seesionErr != nil {
 				ctx.Writer.WriteHeader(http.StatusInternalServerError)
@@ -60,10 +62,11 @@ func Login() func(ctx *gin.Context) {
 				})
 				return
 			}
-			fmt.Println("User Login is successful !!!")
+
+			fmt.Println("User Login is successful !!! ", session.Values["sessionID"])
 
 			ctx.JSON(http.StatusOK, map[string]string{
-				"sid": fmt.Sprintf("%v", session.Values["expiryTime"]),
+				"sid": fmt.Sprintf("%v", session.Values["sessionID"]),
 			})
 			ctx.Writer.WriteHeader(http.StatusOK)
 		} else {
@@ -73,24 +76,28 @@ func Login() func(ctx *gin.Context) {
 }
 
 func (service *NotesService) userLogin(ctx *gin.Context, userLogin models.UserLogin) (string, *noteserror.NotesError) {
-	fmt.Println("0", userLogin.Email, " : ", userLogin.Password)
 	if userLogin.Email == "" {
 		return "", &noteserror.NotesError{
 			Code:    http.StatusBadRequest,
-			Message: "EmailId is empty",
+			Message: "EmailId is missing",
 		}
 	}
-	fmt.Println("1")
+	if userLogin.Password == "" {
+		return "", &noteserror.NotesError{
+			Code:    http.StatusBadRequest,
+			Message: "password is missing",
+		}
+	}
+
 	pass, err := service.repo.Login(ctx, userLogin)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("2")
+
 	if pass == userLogin.Password {
-		fmt.Println("3")
 		return "Login Successfull", nil
 	}
-	fmt.Println("4")
+
 	return "", &noteserror.NotesError{
 		Code:    http.StatusBadRequest,
 		Message: "incorrect password",
@@ -106,6 +113,9 @@ func SignUp() func(ctx *gin.Context) {
 			fmt.Println("User is trying to signup !!!")
 			err := notesClient.userSignUp(ctx, userSignUp)
 			if err != nil {
+				ctx.JSON(http.StatusOK, map[string]string{
+					"Error": err.Message,
+				})
 				ctx.Writer.WriteHeader(err.Code)
 				return
 			}
@@ -123,7 +133,21 @@ func (service *NotesService) userSignUp(ctx *gin.Context, userSignUp models.User
 	if userSignUp.Email == "" {
 		return &noteserror.NotesError{
 			Code:    http.StatusBadRequest,
-			Message: "EmailId is empty",
+			Message: "EmailId is missing",
+		}
+	}
+
+	if userSignUp.Name == "" {
+		return &noteserror.NotesError{
+			Code:    http.StatusBadRequest,
+			Message: "name is missing",
+		}
+	}
+
+	if userSignUp.Password == "" {
+		return &noteserror.NotesError{
+			Code:    http.StatusBadRequest,
+			Message: "password is missing",
 		}
 	}
 
@@ -143,11 +167,15 @@ func CreateNote() func(ctx *gin.Context) {
 			fmt.Println("User is trying to signup !!!")
 			notesId, err := notesClient.createNote(ctx, notes)
 			if err != nil {
+				ctx.JSON(http.StatusOK, map[string]string{
+					"Error": err.Message,
+				})
 				ctx.Writer.WriteHeader(err.Code)
 				return
 			}
+			fmt.Println("notesId : ", notesId)
 			ctx.JSON(http.StatusOK, map[string]string{
-				"id": fmt.Sprintf("%v", *notesId),
+				"id": notesId,
 			})
 			ctx.Writer.WriteHeader(http.StatusOK)
 
@@ -157,11 +185,17 @@ func CreateNote() func(ctx *gin.Context) {
 	}
 }
 
-func (service *NotesService) createNote(ctx *gin.Context, userSignUp models.Notes) (*int, *noteserror.NotesError) {
-
-	notesId, err := service.repo.CreateNotes(ctx, userSignUp)
+func (service *NotesService) createNote(ctx *gin.Context, notes models.Notes) (string, *noteserror.NotesError) {
+	if notes.Note == "" {
+		return "", &noteserror.NotesError{
+			Code:    http.StatusBadRequest,
+			Message: "note is empty",
+			Trace:   ctx.Request.Header.Get(constants.TransactionID),
+		}
+	}
+	notesId, err := service.repo.CreateNotes(ctx, notes)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	return notesId, nil
 }
@@ -174,6 +208,9 @@ func DeleteNote() func(ctx *gin.Context) {
 			fmt.Println("User is deelte the note to signup !!!")
 			err := notesClient.deleteNote(ctx, notes)
 			if err != nil {
+				ctx.JSON(http.StatusOK, map[string]string{
+					"Error": err.Message,
+				})
 				ctx.Writer.WriteHeader(err.Code)
 				return
 			}
@@ -189,9 +226,16 @@ func DeleteNote() func(ctx *gin.Context) {
 	}
 }
 
-func (service *NotesService) deleteNote(ctx *gin.Context, userSignUp models.Notes) *noteserror.NotesError {
+func (service *NotesService) deleteNote(ctx *gin.Context, notes models.Notes) *noteserror.NotesError {
+	if notes.NoteId == "" {
+		return &noteserror.NotesError{
+			Code:    http.StatusBadRequest,
+			Message: "id is missing",
+			Trace:   ctx.Request.Header.Get(constants.TransactionID),
+		}
+	}
 
-	err := service.repo.DeleteNotes(ctx, userSignUp)
+	err := service.repo.DeleteNotes(ctx, notes)
 	if err != nil {
 		return err
 	}
@@ -206,6 +250,9 @@ func GetNote() func(ctx *gin.Context) {
 			fmt.Println("User is trying to get all the note !!!")
 			fetchedNotes, err := notesClient.getNotes(ctx, notes)
 			if err != nil {
+				ctx.JSON(http.StatusOK, map[string]string{
+					"Error": err.Message,
+				})
 				ctx.Writer.WriteHeader(err.Code)
 				return
 			}
@@ -224,7 +271,7 @@ func GetNote() func(ctx *gin.Context) {
 
 func (service *NotesService) getNotes(ctx *gin.Context, notes models.Notes) ([]models.Notes, *noteserror.NotesError) {
 
-	fetchedNotes, err := service.repo.GetNotes(ctx, notes)
+	fetchedNotes, err := service.repo.GetNotes(ctx)
 	if err != nil {
 		return []models.Notes{}, err
 	}
