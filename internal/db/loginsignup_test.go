@@ -24,7 +24,7 @@ func TestLogin(t *testing.T) {
 	// Set up the expected SQL query and result
 	email := "test@example.com"
 	password := "password123"
-	mock.ExpectQuery(`SELECT password FROM notesusers WHERE emailid=\$1`).
+	mock.ExpectQuery(`SELECT password FROM users WHERE emailid=\$1`).
 		WithArgs(email).
 		WillReturnRows(sqlmock.NewRows([]string{"password"}).AddRow(password))
 
@@ -69,7 +69,7 @@ func TestSignUp(t *testing.T) {
 	name := "John Doe"
 	email := "test@example.com"
 	password := "password123"
-	mock.ExpectExec(`insert into notesusers\(name, password, emailid\) values\(\$1,\$2,\$3\)`).
+	mock.ExpectExec(`insert into users\(name, password, emailid\) values\(\$1,\$2,\$3\)`).
 		WithArgs(name, password, email).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 

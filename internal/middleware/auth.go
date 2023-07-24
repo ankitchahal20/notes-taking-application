@@ -15,7 +15,7 @@ import (
 )
 
 // This function gets the unique transactionID
-func getTransactionID(c *gin.Context) string {
+func GetTransactionID(c *gin.Context) string {
 
 	transactionID := c.GetHeader(constants.TransactionID)
 	_, err := uuid.Parse(transactionID)
@@ -30,7 +30,7 @@ func AuthorizeUserRequest() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		// fetch the transactionID
-		txid := getTransactionID(ctx)
+		txid := GetTransactionID(ctx)
 
 		// validate the body params
 		var notes models.Notes
