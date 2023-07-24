@@ -42,10 +42,7 @@ func Login() func(ctx *gin.Context) {
 			_, err := notesClient.userLogin(ctx, userLogin)
 			if err != nil {
 				utils.Logger.Error(fmt.Sprintf("error received from service layer during user login, txid : %v", txid))
-				ctx.Writer.WriteHeader(err.Code)
-				ctx.JSON(http.StatusOK, map[string]string{
-					"Error": err.Message,
-				})
+				utils.RespondWithError(ctx, err.Code, err.Message)
 				return
 			}
 
@@ -122,11 +119,9 @@ func SignUp() func(ctx *gin.Context) {
 		if err := ctx.ShouldBindBodyWith(&userSignUp, binding.JSON); err == nil {
 			utils.Logger.Info(fmt.Sprintf("user request is unmarshalled successfully for user sign-up, txid : %v", txid))
 			err := notesClient.userSignUp(ctx, userSignUp)
+			fmt.Println("Err : ", err)
 			if err != nil {
-				ctx.JSON(http.StatusOK, map[string]string{
-					"Error": err.Message,
-				})
-				ctx.Writer.WriteHeader(err.Code)
+				utils.RespondWithError(ctx, err.Code, err.Message)
 				return
 			}
 			utils.Logger.Info(fmt.Sprintf("user ser signup is successful, txid : %v", txid))
@@ -181,10 +176,7 @@ func CreateNote() func(ctx *gin.Context) {
 			utils.Logger.Info(fmt.Sprintf("user request for note creation is unmarshalled successfully, txid : %v", txid))
 			notesId, err := notesClient.createNote(ctx, notes)
 			if err != nil {
-				ctx.JSON(http.StatusOK, map[string]string{
-					"Error": err.Message,
-				})
-				ctx.Writer.WriteHeader(err.Code)
+				utils.RespondWithError(ctx, err.Code, err.Message)
 				return
 			}
 			ctx.JSON(http.StatusOK, map[string]string{
@@ -225,10 +217,7 @@ func DeleteNote() func(ctx *gin.Context) {
 			utils.Logger.Info(fmt.Sprintf("user request unmarshalled succesfully for deleting a note, txid : %v", txid))
 			err := notesClient.deleteNote(ctx, notes)
 			if err != nil {
-				ctx.JSON(http.StatusOK, map[string]string{
-					"Error": err.Message,
-				})
-				ctx.Writer.WriteHeader(err.Code)
+				utils.RespondWithError(ctx, err.Code, err.Message)
 				return
 			}
 
@@ -268,10 +257,7 @@ func GetNote() func(ctx *gin.Context) {
 			utils.Logger.Info(fmt.Sprintf("user request unmarshalled succesfully for fetching all the notes, txid : %v", txid))
 			fetchedNotes, err := notesClient.getNotes(ctx, notes)
 			if err != nil {
-				ctx.JSON(http.StatusOK, map[string]string{
-					"Error": err.Message,
-				})
-				ctx.Writer.WriteHeader(err.Code)
+				utils.RespondWithError(ctx, err.Code, err.Message)
 				return
 			}
 			ctx.JSON(http.StatusOK, map[string][]models.Notes{
